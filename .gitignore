@@ -1,0 +1,9 @@
+build/
+install/
+log/
+__pycache__/
+*.pyc
+.pytest_cache/
+frames_*.pdf
+frames_*.gv
+industrial_4dof_arm/docs/tmp.*.html

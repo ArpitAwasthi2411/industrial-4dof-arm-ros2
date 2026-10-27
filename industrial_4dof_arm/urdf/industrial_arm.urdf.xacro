@@ -1,0 +1,330 @@
+<?xml version="1.0"?>
+<!--
+  industrial_arm.urdf.xacro
+  4-DOF industrial robotic arm (waist - shoulder - elbow - wrist).
+
+  Kinematic chain:
+    world     => (fixed)                               => base_link
+    base_link => (joint_1, revolute Z, waist)          => link_1 (shoulder)
+    link_1    => (joint_2, revolute Y, shoulder pitch) => link_2 (upper arm)
+    link_2    => (joint_3, revolute Y, elbow pitch)    => link_3 (forearm)
+    link_3    => (joint_4, revolute Y, wrist pitch)    => link_4 (end-effector / gripper mount)
+    link_4    => (fixed)                               => tool0 (tool centre point)
+
+  Conventions (REP-103): metres, kilograms, radians, right-handed frames.
+  In the zero configuration the arm points straight up along +Z.
+-->
+<robot name="industrial_4dof_arm" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="materials.xacro"/>
+  <xacro:include filename="inertials.xacro"/>
+
+  <!-- ============================================================ -->
+  <!-- Parameters                                                   -->
+  <!-- ============================================================ -->
+
+  <!-- Wrist axis: "pitch" rotates about Y, "roll" rotates about X. -->
+  <xacro:arg name="wrist_axis" default="pitch"/>
+  <xacro:property name="wrist_axis" value="$(arg wrist_axis)"/>
+
+  <xacro:property name="PI" value="3.141592653589793"/>
+
+  <!-- Base pedestal -->
+  <xacro:property name="base_radius" value="0.12"/>
+  <xacro:property name="base_height" value="0.10"/>
+  <xacro:property name="base_mass"   value="5.0"/>
+
+  <!-- Link 1: shoulder turret -->
+  <xacro:property name="link1_radius" value="0.08"/>
+  <xacro:property name="link1_height" value="0.18"/>
+  <xacro:property name="link1_mass"   value="3.0"/>
+  <xacro:property name="shoulder_hub_radius" value="0.06"/>
+  <xacro:property name="shoulder_hub_length" value="0.18"/>
+
+  <!-- Link 2: upper arm -->
+  <xacro:property name="link2_width"  value="0.08"/>
+  <xacro:property name="link2_length" value="0.40"/>
+  <xacro:property name="link2_mass"   value="2.5"/>
+  <xacro:property name="elbow_hub_radius" value="0.05"/>
+  <xacro:property name="elbow_hub_length" value="0.12"/>
+
+  <!-- Link 3: forearm -->
+  <xacro:property name="link3_width"  value="0.065"/>
+  <xacro:property name="link3_length" value="0.32"/>
+  <xacro:property name="link3_mass"   value="1.5"/>
+  <xacro:property name="wrist_hub_radius" value="0.04"/>
+  <xacro:property name="wrist_hub_length" value="0.09"/>
+
+  <!-- Link 4: end-effector / gripper mounting base -->
+  <xacro:property name="link4_radius" value="0.035"/>
+  <xacro:property name="link4_length" value="0.06"/>
+  <xacro:property name="link4_mass"   value="0.5"/>
+  <xacro:property name="flange_radius"    value="0.05"/>
+  <xacro:property name="flange_thickness" value="0.01"/>
+
+  <!-- Joint limits: effort [N.m], velocity [rad/s] -->
+  <xacro:property name="joint1_effort" value="150.0"/>
+  <xacro:property name="joint1_velocity" value="1.5"/>
+  <xacro:property name="joint2_effort" value="120.0"/>
+  <xacro:property name="joint2_velocity" value="1.2"/>
+  <xacro:property name="joint3_effort" value="80.0"/>
+  <xacro:property name="joint3_velocity" value="1.5"/>
+  <xacro:property name="joint4_effort" value="30.0"/>
+  <xacro:property name="joint4_velocity" value="2.0"/>
+
+  <!-- Joint dynamics: damping [N.m.s/rad], friction [N.m] -->
+  <xacro:property name="joint_damping"  value="0.5"/>
+  <xacro:property name="joint_friction" value="0.1"/>
+
+  <!-- ============================================================ -->
+  <!-- World anchor                                                 -->
+  <!-- ============================================================ -->
+
+  <link name="world"/>
+
+  <joint name="world_to_base" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============================================================ -->
+  <!-- Base link (fixed pedestal)                                   -->
+  <!-- ============================================================ -->
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 ${base_height / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${base_radius}" length="${base_height}"/>
+      </geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${base_height / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${base_radius}" length="${base_height}"/>
+      </geometry>
+    </collision>
+    <xacro:cylinder_inertial mass="${base_mass}" radius="${base_radius}" length="${base_height}">
+      <origin xyz="0 0 ${base_height / 2.0}" rpy="0 0 0"/>
+    </xacro:cylinder_inertial>
+  </link>
+
+  <!-- ============================================================ -->
+  <!-- Joint 1: waist rotation about Z (-180 deg .. +180 deg)       -->
+  <!-- ============================================================ -->
+
+  <joint name="joint_1" type="revolute">
+    <parent link="base_link"/>
+    <child link="link_1"/>
+    <origin xyz="0 0 ${base_height}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-PI}" upper="${PI}" effort="${joint1_effort}" velocity="${joint1_velocity}"/>
+    <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+  </joint>
+
+  <!-- ============================================================ -->
+  <!-- Link 1: shoulder turret                                      -->
+  <!-- ============================================================ -->
+
+  <link name="link_1">
+    <!-- Turret body -->
+    <visual>
+      <origin xyz="0 0 ${link1_height / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${link1_radius}" length="${link1_height}"/>
+      </geometry>
+      <material name="industrial_orange"/>
+    </visual>
+    <!-- Shoulder motor housing (cylinder axis along Y) -->
+    <visual>
+      <origin xyz="0 0 ${link1_height}" rpy="${PI / 2.0} 0 0"/>
+      <geometry>
+        <cylinder radius="${shoulder_hub_radius}" length="${shoulder_hub_length}"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${link1_height / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${link1_radius}" length="${link1_height}"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0 ${link1_height}" rpy="${PI / 2.0} 0 0"/>
+      <geometry>
+        <cylinder radius="${shoulder_hub_radius}" length="${shoulder_hub_length}"/>
+      </geometry>
+    </collision>
+    <xacro:cylinder_inertial mass="${link1_mass}" radius="${link1_radius}" length="${link1_height}">
+      <origin xyz="0 0 ${link1_height / 2.0}" rpy="0 0 0"/>
+    </xacro:cylinder_inertial>
+  </link>
+
+  <!-- ============================================================ -->
+  <!-- Joint 2: shoulder pitch about Y (-90 deg .. +90 deg)         -->
+  <!-- ============================================================ -->
+
+  <joint name="joint_2" type="revolute">
+    <parent link="link_1"/>
+    <child link="link_2"/>
+    <origin xyz="0 0 ${link1_height}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="${-PI / 2.0}" upper="${PI / 2.0}" effort="${joint2_effort}" velocity="${joint2_velocity}"/>
+    <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+  </joint>
+
+  <!-- ============================================================ -->
+  <!-- Link 2: upper arm                                            -->
+  <!-- ============================================================ -->
+
+  <link name="link_2">
+    <!-- Arm beam -->
+    <visual>
+      <origin xyz="0 0 ${link2_length / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${link2_width} ${link2_width} ${link2_length}"/>
+      </geometry>
+      <material name="industrial_orange"/>
+    </visual>
+    <!-- Elbow motor housing (cylinder axis along Y) -->
+    <visual>
+      <origin xyz="0 0 ${link2_length}" rpy="${PI / 2.0} 0 0"/>
+      <geometry>
+        <cylinder radius="${elbow_hub_radius}" length="${elbow_hub_length}"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${link2_length / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${link2_width} ${link2_width} ${link2_length}"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0 ${link2_length}" rpy="${PI / 2.0} 0 0"/>
+      <geometry>
+        <cylinder radius="${elbow_hub_radius}" length="${elbow_hub_length}"/>
+      </geometry>
+    </collision>
+    <xacro:box_inertial mass="${link2_mass}" x="${link2_width}" y="${link2_width}" z="${link2_length}">
+      <origin xyz="0 0 ${link2_length / 2.0}" rpy="0 0 0"/>
+    </xacro:box_inertial>
+  </link>
+
+  <!-- ============================================================ -->
+  <!-- Joint 3: elbow pitch about Y (-135 deg .. +135 deg)          -->
+  <!-- ============================================================ -->
+
+  <joint name="joint_3" type="revolute">
+    <parent link="link_2"/>
+    <child link="link_3"/>
+    <origin xyz="0 0 ${link2_length}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="${-3.0 * PI / 4.0}" upper="${3.0 * PI / 4.0}" effort="${joint3_effort}" velocity="${joint3_velocity}"/>
+    <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+  </joint>
+
+  <!-- ============================================================ -->
+  <!-- Link 3: forearm                                              -->
+  <!-- ============================================================ -->
+
+  <link name="link_3">
+    <!-- Forearm beam -->
+    <visual>
+      <origin xyz="0 0 ${link3_length / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${link3_width} ${link3_width} ${link3_length}"/>
+      </geometry>
+      <material name="steel_grey"/>
+    </visual>
+    <!-- Wrist motor housing (cylinder axis along Y) -->
+    <visual>
+      <origin xyz="0 0 ${link3_length}" rpy="${PI / 2.0} 0 0"/>
+      <geometry>
+        <cylinder radius="${wrist_hub_radius}" length="${wrist_hub_length}"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${link3_length / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${link3_width} ${link3_width} ${link3_length}"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0 ${link3_length}" rpy="${PI / 2.0} 0 0"/>
+      <geometry>
+        <cylinder radius="${wrist_hub_radius}" length="${wrist_hub_length}"/>
+      </geometry>
+    </collision>
+    <xacro:box_inertial mass="${link3_mass}" x="${link3_width}" y="${link3_width}" z="${link3_length}">
+      <origin xyz="0 0 ${link3_length / 2.0}" rpy="0 0 0"/>
+    </xacro:box_inertial>
+  </link>
+
+  <!-- ============================================================ -->
+  <!-- Joint 4: wrist pitch about Y (or roll about X)               -->
+  <!--          (-180 deg .. +180 deg)                              -->
+  <!-- ============================================================ -->
+
+  <joint name="joint_4" type="revolute">
+    <parent link="link_3"/>
+    <child link="link_4"/>
+    <origin xyz="0 0 ${link3_length}" rpy="0 0 0"/>
+    <xacro:if value="${wrist_axis == 'roll'}">
+      <axis xyz="1 0 0"/>
+    </xacro:if>
+    <xacro:unless value="${wrist_axis == 'roll'}">
+      <axis xyz="0 1 0"/>
+    </xacro:unless>
+    <limit lower="${-PI}" upper="${PI}" effort="${joint4_effort}" velocity="${joint4_velocity}"/>
+    <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+  </joint>
+
+  <!-- ============================================================ -->
+  <!-- Link 4: end-effector / gripper mounting base                 -->
+  <!-- ============================================================ -->
+
+  <link name="link_4">
+    <!-- Wrist body -->
+    <visual>
+      <origin xyz="0 0 ${link4_length / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${link4_radius}" length="${link4_length}"/>
+      </geometry>
+      <material name="steel_grey"/>
+    </visual>
+    <!-- Tool mounting flange (ISO 9409 style plate) -->
+    <visual>
+      <origin xyz="0 0 ${link4_length + flange_thickness / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${flange_radius}" length="${flange_thickness}"/>
+      </geometry>
+      <material name="tool_blue"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${(link4_length + flange_thickness) / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${flange_radius}" length="${link4_length + flange_thickness}"/>
+      </geometry>
+    </collision>
+    <xacro:cylinder_inertial mass="${link4_mass}" radius="${link4_radius}" length="${link4_length + flange_thickness}">
+      <origin xyz="0 0 ${(link4_length + flange_thickness) / 2.0}" rpy="0 0 0"/>
+    </xacro:cylinder_inertial>
+  </link>
+
+  <!-- ============================================================ -->
+  <!-- Tool centre point (gripper attaches here)                    -->
+  <!-- ============================================================ -->
+
+  <joint name="link_4_to_tool0" type="fixed">
+    <parent link="link_4"/>
+    <child link="tool0"/>
+    <origin xyz="0 0 ${link4_length + flange_thickness}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="tool0"/>
+
+</robot>
