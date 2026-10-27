@@ -561,8 +561,31 @@ folder (`src/industrial-4dof-arm-ros2/industrial_4dof_arm`).
 **Results from the author's environment.** The Xacro expands without errors in both wrist
 configurations, and all 7 structural tests pass. Forward kinematics computed directly from
 the expanded URDF give the same `tool0` positions as Section 10.4: (0, 0, 1.070) at the zero
-pose and (0.673, 0, 0.563) at `joint_2` = `joint_3` = 45°. Section 9.4 lists the RViz and TF
-tree screenshots to capture on a ROS 2 Humble/Iron machine for the submission folder.
+pose and (0.673, 0, 0.563) at `joint_2` = `joint_3` = 45°.
+
+On ROS 2 Humble (Ubuntu 22.04) the package builds with `colcon`, and the display launch opens
+RViz2 with *Global Status: Ok* and *RobotModel Status: Ok*. The four sliders in
+`joint_state_publisher_gui` move the waist, shoulder, elbow and wrist within their limits.
+
+### 12.1 Screenshots
+
+![RViz2, zero pose](docs/images/rviz_zero_pose.png)
+
+*Figure 2. RViz2 with all joints at 0: the arm stands vertical and `tool0` is 1.07 m above the grid.*
+
+![RViz2, posed](docs/images/rviz_posed.png)
+
+*Figure 3. RViz2 and the joint slider GUI with `joint_1` = −0.051, `joint_2` = −0.059,
+`joint_3` = 1.516 and `joint_4` = 1.070 rad. Global Status and RobotModel Status are both Ok.*
+
+![RViz2, TF frames](docs/images/rviz_tf_frames.png)
+
+*Figure 4. RViz2 TF display showing the frames `world`, `base_link`, `link_1` to `link_4` and `tool0`.*
+
+![TF tree](docs/images/tf_tree.png)
+
+*Figure 5. TF tree from `ros2 run tf2_tools view_frames`: world → base_link → link_1 → link_2 →
+link_3 → link_4 → tool0.*
 
 ## 13. Troubleshooting
 
