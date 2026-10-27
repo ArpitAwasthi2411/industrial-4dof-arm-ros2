@@ -10,3 +10,4 @@ pre { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 4px; paddin
 code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.5pt; }
 img { max-width: 100%; }
 a { color: #0b5cad; text-decoration: none; }
+img { max-height: 235mm; object-fit: contain; display: block; margin: 0 auto; page-break-inside: avoid; }

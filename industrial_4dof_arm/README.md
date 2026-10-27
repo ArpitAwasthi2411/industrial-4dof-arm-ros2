@@ -555,8 +555,8 @@ folder (`src/industrial-4dof-arm-ros2/industrial_4dof_arm`).
 | All links and joints defined correctly | Q1 tables, `check_urdf` tree, `test_links_present`, `test_revolute_joints` | ✅ |
 | Visual and collision elements | Q2 table, `test_physical_links_have_visual_collision_inertial` | ✅ |
 | Proper joint types and limits (radians) | Q3 table, `test_revolute_joints` | ✅ |
-| Loads in RViz | Section 9 launch and checklist, screenshots `rviz_zero_pose.png`, `rviz_posed.png` | ✅ |
-| Correct TF tree | Section 10 hierarchy, `view_frames` output, `tf2_echo` values | ✅ |
+| Loads in RViz | Section 9 launch and checklist, Figures 2–4 | ✅ |
+| Correct TF tree | Section 10 hierarchy, `view_frames` output (Figure 5), `tf2_echo` values | ✅ |
 
 **Results from the author's environment.** The Xacro expands without errors in both wrist
 configurations, and all 7 structural tests pass. Forward kinematics computed directly from
@@ -580,12 +580,14 @@ RViz2 with *Global Status: Ok* and *RobotModel Status: Ok*. The four sliders in
 
 ![RViz2, TF frames](docs/images/rviz_tf_frames.png)
 
-*Figure 4. RViz2 TF display showing the frames `world`, `base_link`, `link_1` to `link_4` and `tool0`.*
+*Figure 4. RViz2 TF display (names, axes and arrows on) with `joint_1` = 0.357, `joint_2` = 0.620,
+`joint_3` = 0.879 and `joint_4` = 0.594 rad. TF Status is Ok.*
 
 ![TF tree](docs/images/tf_tree.png)
 
 *Figure 5. TF tree from `ros2 run tf2_tools view_frames`: world → base_link → link_1 → link_2 →
-link_3 → link_4 → tool0.*
+link_3 → link_4 → tool0. The two fixed joints are static (Average rate 10000.0, buffer length 0),
+and the four revolute joints update at 10.2 Hz from `/joint_states`.*
 
 ## 13. Troubleshooting
 
